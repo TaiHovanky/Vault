@@ -1,6 +1,8 @@
 var express = require('express');
 var formidable = require('formidable');
 var util = require('util');
+var bodyparser = require('body-parser');
+var _ = require('underscore');
 var fs = require('fs');
 
 var app = express();
@@ -14,18 +16,14 @@ app.get('/', function(req, res){
     res.render('myPasswordIndex', {acctInfo : "My account credentials:"});
 });
 
-app.get('/mypwds/:id', function(req, res){
-    var idMatch;
+app.get('/mypwds/:id', function(req, res){   
     var pwdId = parseInt(req.params.id);
-    accounts.forEach(function(account){
-        if(account.id === pwdId){
-            idMatch = account;
-        }
-    });
+    var idMatch = _.findWhere(accounts, {id: pwdId});
     if(idMatch){
-        //var myInfo = res.json(idMatch);
         var myInfo = JSON.stringify(idMatch);
         res.render('myPasswordIndex', {acctInfo : "My account credentials:" + myInfo});
+    } else {
+        res.status(400).send();
     }
 });
 
@@ -35,8 +33,8 @@ app.post('/', function(req, res){
         var form = new formidable.IncomingForm();
         form.parse(req, function(err, fields, files){
             res.writeHead(200, {'Content-Type': 'text/plain'});
-            var objStr = util.inspect(fields).replace(/(\r\n|\n|\r)|[\{\}]/g, "");
-            var arr = objStr.split(',');
+            var objStr = util.inspect(fields).replace(/(\r\n|\n|\r)|[\{\}]/g, ""); //use util.inspect to grab fiels, then remove the new lines and curly braces
+            var arr = objStr.split(','); //conver the objStr string into an array
             var myObj = {};
             arr.forEach(function(prop){
                 var pair = prop.split(":");
@@ -48,6 +46,16 @@ app.post('/', function(req, res){
         });
     }
     addAccounts(req, res);
+});
+
+app.delete('/mypwds/:id', function(req, res){
+    var pwdId = req.params.id;
+    var idMatch = _.findWhere(accounts, {id: pwdId});
+    if(isMatch){
+        accounts = _.without(accounts, idMatch);
+    } else {
+        res.status(400).send('no account found');
+    }
 });
 
 app.listen(port);
